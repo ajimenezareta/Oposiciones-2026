@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clasificador: Clima vs Tiempo</title>
+    <title>Clima vs Tiempo - Edición Genially</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;900&display=swap');
@@ -13,8 +13,9 @@
             background-color: #0f172a;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
+            overflow: hidden; /* Evita que salga la barra lateral */
             touch-action: none;
+            height: 600px; /* Altura fija para que encaje en Genially */
         }
 
         .main-bg {
@@ -22,32 +23,31 @@
                               url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000');
             background-size: cover;
             background-position: center;
-            min-height: 100vh;
+            height: 600px;
             display: flex;
             flex-direction: column;
-            padding-bottom: 40px;
         }
 
-        /* Tarjeta tipo "Bandera" */
+        /* Tarjetas más pequeñas para que quepan en el muelle */
         .card {
             background: white;
-            padding: 12px;
+            padding: 8px;
             border-radius: 8px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
             cursor: grab;
             user-select: none;
             text-align: center;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.85rem;
             width: 100%;
-            min-height: 80px;
+            min-height: 55px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-left: 6px solid #64748b;
+            border-left: 5px solid #64748b;
             color: #0f172a;
             z-index: 50;
-            line-height: 1.2;
+            line-height: 1.1;
         }
 
         .card:active {
@@ -55,163 +55,123 @@
             z-index: 1000;
         }
 
-        /* ZONAS DE SOLTADO - DISEÑO DE CAJÓN MUY VISIBLE */
+        /* Contenedores de destino más bajos */
         .drop-zone {
             flex: 1;
-            min-height: 320px;
-            border-radius: 40px;
-            border: 5px dashed rgba(255, 255, 255, 0.2);
+            height: 260px;
+            border-radius: 25px;
+            border: 3px dashed rgba(255, 255, 255, 0.2);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            padding-top: 35px;
+            padding-top: 15px;
             transition: all 0.3s ease;
-            position: relative;
             background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(5px);
         }
 
-        /* Resalte visual cuando la tarjeta está encima */
-        #target-tiempo.active { 
-            background: rgba(251, 191, 36, 0.25); 
-            border-color: #fbbf24;
-            transform: scale(1.02);
-        }
-        #target-clima.active { 
-            background: rgba(14, 165, 233, 0.25); 
-            border-color: #0ea5e9;
-            transform: scale(1.02);
-        }
+        #target-tiempo.active { background: rgba(251, 191, 36, 0.2); border-color: #fbbf24; }
+        #target-clima.active { background: rgba(14, 165, 233, 0.2); border-color: #0ea5e9; }
 
         .zone-header {
             font-weight: 900;
-            font-size: 2.2rem;
+            font-size: 1.3rem;
             color: white;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 8px;
-            text-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
 
         .zone-sub {
             background: white;
-            padding: 4px 16px;
-            border-radius: 20px;
-            font-weight: 800;
-            font-size: 0.9rem;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            padding: 1px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.7rem;
+            margin-bottom: 8px;
         }
-
-        .color-tiempo { color: #d97706; }
-        .color-clima { color: #0369a1; }
 
         @keyframes success-pop {
             0% { transform: scale(1); }
-            50% { transform: scale(1.08); }
+            50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
 
-        .anim-success { 
-            animation: success-pop 0.4s ease-out;
-            border-style: solid !important;
-        }
+        .anim-success { animation: success-pop 0.4s ease-out; }
 
         .shake { animation: shake 0.5s both; }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            20% { transform: translateX(-8px); }
-            40% { transform: translateX(8px); }
-            60% { transform: translateX(-8px); }
-            80% { transform: translateX(8px); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
 
         #victory-screen {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.96);
+            background: rgba(15, 23, 42, 0.95);
             z-index: 2000;
             place-items: center;
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(10px);
         }
     </style>
 </head>
 <body>
 
     <div class="main-bg">
-        <!-- Cabecera del Juego -->
-        <header class="p-6 flex justify-between items-center w-full max-w-7xl mx-auto">
-            <div class="bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-md">
-                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">CIENCIA: CLIMA VS TIEMPO</h1>
-                <p class="text-slate-300 text-sm font-medium">¡Arrastra cada tarjeta a su contenedor!</p>
-            </div>
-            
-            <div class="bg-white text-slate-900 px-8 py-3 rounded-2xl font-black text-3xl shadow-2xl flex flex-col items-center">
-                <span id="score" class="leading-none">0</span>
-                <span class="text-[10px] uppercase text-slate-400 mt-1">Aciertos</span>
+        <header class="p-3 flex justify-between items-center w-full max-w-5xl mx-auto">
+            <h1 class="text-sm md:text-base font-black text-white bg-white/5 px-3 py-1 rounded-lg">CLIMA VS TIEMPO</h1>
+            <div class="bg-white text-slate-900 px-4 py-1 rounded-lg font-black text-base shadow-xl">
+                <span id="score">0</span> / 10
             </div>
         </header>
 
-        <!-- CONTENEDOR DE TARJETAS (ARRIBA) -->
-        <div id="card-dock" class="w-full max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-4 px-8 mb-8">
-            <!-- Las tarjetas se generan aquí mediante JavaScript -->
+        <!-- AREA DE TARJETAS (Muelle superior) -->
+        <div id="card-dock" class="w-full max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-2 px-4 mb-3">
+            <!-- Dinámico -->
         </div>
 
-        <!-- ZONAS DE CLASIFICACIÓN (ABAJO) -->
-        <main class="flex-grow flex items-center justify-center px-8 pb-12">
-            <div class="flex flex-col md:flex-row w-full max-w-7xl gap-10 h-full min-h-[400px]">
+        <!-- ZONAS DE SOLTADO -->
+        <main class="flex-grow flex items-center justify-center px-4 pb-4">
+            <div class="flex flex-row w-full max-w-5xl gap-4 h-full">
                 
-                <!-- CAJÓN TIEMPO -->
                 <div id="target-tiempo" class="drop-zone" data-type="tiempo">
                     <h2 class="zone-header">TIEMPO</h2>
-                    <span class="zone-sub color-tiempo">¿QUÉ PASA HOY?</span>
-                    
-                    <div class="mt-auto mb-6 text-white/20 text-xs font-bold uppercase tracking-widest text-center px-4">
-                        Fenómenos puntuales y concretos
-                    </div>
+                    <span class="zone-sub text-amber-600">¿Qué pasa hoy?</span>
+                    <div class="mt-auto text-white/20 text-[8px] pb-2 uppercase font-bold text-center">Puntual / Hoy</div>
                 </div>
 
-                <!-- CAJÓN CLIMA -->
                 <div id="target-clima" class="drop-zone" data-type="clima">
                     <h2 class="zone-header">CLIMA</h2>
-                    <span class="zone-sub color-clima">¿CÓMO ES SIEMPRE?</span>
-                    
-                    <div class="mt-auto mb-6 text-white/20 text-xs font-bold uppercase tracking-widest text-center px-4">
-                        Medias de muchos años (30+)
-                    </div>
+                    <span class="zone-sub text-sky-600">¿Cómo es siempre?</span>
+                    <div class="mt-auto text-white/20 text-[8px] pb-2 uppercase font-bold text-center">Medias / 30 años</div>
                 </div>
 
             </div>
         </main>
     </div>
 
-    <!-- PANTALLA DE VICTORIA -->
+    <!-- Pantalla Final -->
     <div id="victory-screen">
-        <div class="text-center bg-white p-14 rounded-[4rem] shadow-2xl max-w-lg border-b-[15px] border-indigo-500 mx-4">
-            <div class="text-9xl mb-8">🏆</div>
-            <h2 class="text-5xl font-black text-slate-900 mb-4">¡GENIAL!</h2>
-            <p class="text-slate-500 text-xl font-medium mb-10">Has organizado todos los conceptos meteorológicos correctamente.</p>
-            <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 px-12 rounded-3xl transition-all transform hover:scale-105 shadow-2xl text-2xl w-full">
-                VOLVER A JUGAR
-            </button>
+        <div class="text-center bg-white p-8 rounded-[2rem] shadow-2xl max-w-xs mx-4">
+            <div class="text-6xl mb-4">🌤️</div>
+            <h2 class="text-3xl font-black text-slate-900 mb-2">¡LOGRADO!</h2>
+            <button onclick="location.reload()" class="bg-indigo-600 text-white font-black py-4 px-8 rounded-2xl text-lg w-full mt-4">REINTENTAR</button>
         </div>
     </div>
 
     <script>
-        // Datos de las tarjetas sacados de tu imagen y peticiones
         const cardsData = [
-            { text: "Una tormenta hoy en Pamplona.", type: "tiempo" },
-            { text: "Clima mediterráneo", type: "clima" },
-            { text: "Temperatura media anual de un lugar.", type: "clima" },
-            { text: "Un día de nieve puntual.", type: "tiempo" },
-            { text: "Clima polar", type: "clima" },
-            { text: "Lluvias frecuentes en otoño e invierno.", type: "clima" },
-            { text: "Precipitaciones medias de una zona.", type: "clima" },
-            { text: "Una ola de calor concreta", type: "tiempo" },
-            { text: "Clima tropical", type: "clima" },
-            { text: "El tiempo que hace hoy al salir del cole", type: "tiempo" }
+            { text: "Hoy llueve en Pamplona.", type: "tiempo" },
+            { text: "Clima mediterráneo continental.", type: "clima" },
+            { text: "Temperatura media anual de Navarra.", type: "clima" },
+            { text: "Mañana bajará el termómetro.", type: "tiempo" },
+            { text: "En el desierto nunca llueve.", type: "clima" },
+            { text: "Lluvias frecuentes en otoño.", type: "clima" },
+            { text: "Precipitaciones medias anuales.", type: "clima" },
+            { text: "Ola de calor de tres días.", type: "tiempo" },
+            { text: "Clima oceánico o atlántico.", type: "clima" },
+            { text: "Nieve inesperada hoy.", type: "tiempo" }
         ];
 
         const dock = document.getElementById('card-dock');
@@ -219,10 +179,7 @@
         const victoryScreen = document.getElementById('victory-screen');
         let solvedCount = 0;
 
-        // Mezclar las tarjetas para que no salgan siempre igual
-        const shuffled = [...cardsData].sort(() => Math.random() - 0.5);
-
-        shuffled.forEach((item) => {
+        [...cardsData].sort(() => Math.random() - 0.5).forEach((item) => {
             const card = document.createElement('div');
             card.className = 'card';
             card.textContent = item.text;
@@ -231,16 +188,13 @@
             let isDragging = false;
             let startX, startY;
 
-            // Iniciar arrastre
             const onStart = (e) => {
                 isDragging = true;
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                
                 const rect = card.getBoundingClientRect();
                 startX = clientX - rect.left;
                 startY = clientY - rect.top;
-                
                 card.style.position = 'fixed';
                 card.style.width = `${rect.width}px`;
                 card.style.left = `${rect.left}px`;
@@ -248,92 +202,51 @@
                 card.style.zIndex = 1000;
             };
 
-            // Mover tarjeta
             const onMove = (e) => {
                 if (!isDragging) return;
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                
                 card.style.left = `${clientX - startX}px`;
                 card.style.top = `${clientY - startY}px`;
-
-                // Resaltar visualmente las zonas cuando pasas por encima
                 document.querySelectorAll('.drop-zone').forEach(z => {
-                    if (isOver(card.getBoundingClientRect(), z.getBoundingClientRect())) {
-                        z.classList.add('active');
-                    } else {
-                        z.classList.remove('active');
-                    }
+                    if (isOver(card.getBoundingClientRect(), z.getBoundingClientRect())) z.classList.add('active');
+                    else z.classList.remove('active');
                 });
             };
 
-            // Soltar tarjeta
             const onEnd = () => {
                 if (!isDragging) return;
                 isDragging = false;
-                
                 const cRect = card.getBoundingClientRect();
-                const targetClima = document.getElementById('target-clima');
-                const targetTiempo = document.getElementById('target-tiempo');
-                
                 let droppedOn = null;
-                if (isOver(cRect, targetClima.getBoundingClientRect())) droppedOn = 'clima';
-                if (isOver(cRect, targetTiempo.getBoundingClientRect())) droppedOn = 'tiempo';
+                if (isOver(cRect, document.getElementById('target-clima').getBoundingClientRect())) droppedOn = 'clima';
+                if (isOver(cRect, document.getElementById('target-tiempo').getBoundingClientRect())) droppedOn = 'tiempo';
 
-                if (droppedOn) {
-                    if (droppedOn === card.dataset.type) {
-                        // Acierto: Ocultamos tarjeta y sumamos punto
-                        card.style.visibility = 'hidden';
-                        solvedCount++;
-                        scoreEl.textContent = solvedCount;
-                        const target = document.getElementById(`target-${droppedOn}`);
-                        target.classList.add('anim-success');
-                        setTimeout(() => target.classList.remove('anim-success'), 400);
-                        
-                        if (solvedCount === 10) {
-                            victoryScreen.style.display = 'grid';
-                        }
-                    } else {
-                        // Error: Vibración y vuelta al dock
-                        card.classList.add('shake');
-                        setTimeout(() => {
-                            card.classList.remove('shake');
-                            reset(card);
-                        }, 500);
-                    }
+                if (droppedOn === card.dataset.type) {
+                    card.style.visibility = 'hidden';
+                    solvedCount++;
+                    scoreEl.textContent = solvedCount;
+                    document.getElementById(`target-${droppedOn}`).classList.add('anim-success');
+                    setTimeout(() => document.getElementById(`target-${droppedOn}`).classList.remove('anim-success'), 400);
+                    if (solvedCount === 10) victoryScreen.style.display = 'grid';
                 } else {
-                    // Si se suelta en tierra de nadie, vuelve a su sitio
-                    reset(card);
+                    card.classList.add('shake');
+                    setTimeout(() => { card.classList.remove('shake'); reset(card); }, 500);
                 }
-                
-                // Limpiar resaltes de zonas
                 document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('active'));
             };
 
-            function reset(el) {
-                el.style.position = 'relative';
-                el.style.left = '0';
-                el.style.top = '0';
-                el.style.zIndex = '50';
-            }
-
-            // Eventos Ratón
+            function reset(el) { el.style.position = 'relative'; el.style.left = '0'; el.style.top = '0'; el.style.zIndex = '50'; }
             card.addEventListener('mousedown', onStart);
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup', onEnd);
-            
-            // Eventos Táctiles (Tablets / Pizarras Digitales)
             card.addEventListener('touchstart', onStart);
             document.addEventListener('touchmove', onMove);
             document.addEventListener('touchend', onEnd);
-
             dock.appendChild(card);
         });
 
-        // Función para detectar si un rectángulo está sobre otro
-        function isOver(r1, r2) {
-            return !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom);
-        }
+        function isOver(r1, r2) { return !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom); }
     </script>
 </body>
 </html>
