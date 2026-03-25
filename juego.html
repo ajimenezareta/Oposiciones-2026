@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clasificador: Clima vs Tiempo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;900&display=swap');
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f172a;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            touch-action: none;
+        }
+
+        .main-bg {
+            background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), 
+                              url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000');
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 40px;
+        }
+
+        /* Tarjeta tipo "Bandera" */
+        .card {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            cursor: grab;
+            user-select: none;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1rem;
+            width: 100%;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 6px solid #64748b;
+            color: #0f172a;
+            z-index: 50;
+            line-height: 1.2;
+        }
+
+        .card:active {
+            cursor: grabbing;
+            z-index: 1000;
+        }
+
+        /* ZONAS DE SOLTADO - DISEÑO DE CAJÓN MUY VISIBLE */
+        .drop-zone {
+            flex: 1;
+            min-height: 320px;
+            border-radius: 40px;
+            border: 5px dashed rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 35px;
+            transition: all 0.3s ease;
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Resalte visual cuando la tarjeta está encima */
+        #target-tiempo.active { 
+            background: rgba(251, 191, 36, 0.25); 
+            border-color: #fbbf24;
+            transform: scale(1.02);
+        }
+        #target-clima.active { 
+            background: rgba(14, 165, 233, 0.25); 
+            border-color: #0ea5e9;
+            transform: scale(1.02);
+        }
+
+        .zone-header {
+            font-weight: 900;
+            font-size: 2.2rem;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            text-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .zone-sub {
+            background: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .color-tiempo { color: #d97706; }
+        .color-clima { color: #0369a1; }
+
+        @keyframes success-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+
+        .anim-success { 
+            animation: success-pop 0.4s ease-out;
+            border-style: solid !important;
+        }
+
+        .shake { animation: shake 0.5s both; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-8px); }
+            80% { transform: translateX(8px); }
+        }
+
+        #victory-screen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.96);
+            z-index: 2000;
+            place-items: center;
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-bg">
+        <!-- Cabecera del Juego -->
+        <header class="p-6 flex justify-between items-center w-full max-w-7xl mx-auto">
+            <div class="bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-md">
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">CIENCIA: CLIMA VS TIEMPO</h1>
+                <p class="text-slate-300 text-sm font-medium">¡Arrastra cada tarjeta a su contenedor!</p>
+            </div>
+            
+            <div class="bg-white text-slate-900 px-8 py-3 rounded-2xl font-black text-3xl shadow-2xl flex flex-col items-center">
+                <span id="score" class="leading-none">0</span>
+                <span class="text-[10px] uppercase text-slate-400 mt-1">Aciertos</span>
+            </div>
+        </header>
+
+        <!-- CONTENEDOR DE TARJETAS (ARRIBA) -->
+        <div id="card-dock" class="w-full max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-4 px-8 mb-8">
+            <!-- Las tarjetas se generan aquí mediante JavaScript -->
+        </div>
+
+        <!-- ZONAS DE CLASIFICACIÓN (ABAJO) -->
+        <main class="flex-grow flex items-center justify-center px-8 pb-12">
+            <div class="flex flex-col md:flex-row w-full max-w-7xl gap-10 h-full min-h-[400px]">
+                
+                <!-- CAJÓN TIEMPO -->
+                <div id="target-tiempo" class="drop-zone" data-type="tiempo">
+                    <h2 class="zone-header">TIEMPO</h2>
+                    <span class="zone-sub color-tiempo">¿QUÉ PASA HOY?</span>
+                    
+                    <div class="mt-auto mb-6 text-white/20 text-xs font-bold uppercase tracking-widest text-center px-4">
+                        Fenómenos puntuales y concretos
+                    </div>
+                </div>
+
+                <!-- CAJÓN CLIMA -->
+                <div id="target-clima" class="drop-zone" data-type="clima">
+                    <h2 class="zone-header">CLIMA</h2>
+                    <span class="zone-sub color-clima">¿CÓMO ES SIEMPRE?</span>
+                    
+                    <div class="mt-auto mb-6 text-white/20 text-xs font-bold uppercase tracking-widest text-center px-4">
+                        Medias de muchos años (30+)
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- PANTALLA DE VICTORIA -->
+    <div id="victory-screen">
+        <div class="text-center bg-white p-14 rounded-[4rem] shadow-2xl max-w-lg border-b-[15px] border-indigo-500 mx-4">
+            <div class="text-9xl mb-8">🏆</div>
+            <h2 class="text-5xl font-black text-slate-900 mb-4">¡GENIAL!</h2>
+            <p class="text-slate-500 text-xl font-medium mb-10">Has organizado todos los conceptos meteorológicos correctamente.</p>
+            <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 px-12 rounded-3xl transition-all transform hover:scale-105 shadow-2xl text-2xl w-full">
+                VOLVER A JUGAR
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Datos de las tarjetas sacados de tu imagen y peticiones
+        const cardsData = [
+            { text: "Una tormenta hoy en Pamplona.", type: "tiempo" },
+            { text: "Clima mediterráneo", type: "clima" },
+            { text: "Temperatura media anual de un lugar.", type: "clima" },
+            { text: "Un día de nieve puntual.", type: "tiempo" },
+            { text: "Clima polar", type: "clima" },
+            { text: "Lluvias frecuentes en otoño e invierno.", type: "clima" },
+            { text: "Precipitaciones medias de una zona.", type: "clima" },
+            { text: "Una ola de calor concreta", type: "tiempo" },
+            { text: "Clima tropical", type: "clima" },
+            { text: "El tiempo que hace hoy al salir del cole", type: "tiempo" }
+        ];
+
+        const dock = document.getElementById('card-dock');
+        const scoreEl = document.getElementById('score');
+        const victoryScreen = document.getElementById('victory-screen');
+        let solvedCount = 0;
+
+        // Mezclar las tarjetas para que no salgan siempre igual
+        const shuffled = [...cardsData].sort(() => Math.random() - 0.5);
+
+        shuffled.forEach((item) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.textContent = item.text;
+            card.dataset.type = item.type;
+            
+            let isDragging = false;
+            let startX, startY;
+
+            // Iniciar arrastre
+            const onStart = (e) => {
+                isDragging = true;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                const rect = card.getBoundingClientRect();
+                startX = clientX - rect.left;
+                startY = clientY - rect.top;
+                
+                card.style.position = 'fixed';
+                card.style.width = `${rect.width}px`;
+                card.style.left = `${rect.left}px`;
+                card.style.top = `${rect.top}px`;
+                card.style.zIndex = 1000;
+            };
+
+            // Mover tarjeta
+            const onMove = (e) => {
+                if (!isDragging) return;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                card.style.left = `${clientX - startX}px`;
+                card.style.top = `${clientY - startY}px`;
+
+                // Resaltar visualmente las zonas cuando pasas por encima
+                document.querySelectorAll('.drop-zone').forEach(z => {
+                    if (isOver(card.getBoundingClientRect(), z.getBoundingClientRect())) {
+                        z.classList.add('active');
+                    } else {
+                        z.classList.remove('active');
+                    }
+                });
+            };
+
+            // Soltar tarjeta
+            const onEnd = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                const cRect = card.getBoundingClientRect();
+                const targetClima = document.getElementById('target-clima');
+                const targetTiempo = document.getElementById('target-tiempo');
+                
+                let droppedOn = null;
+                if (isOver(cRect, targetClima.getBoundingClientRect())) droppedOn = 'clima';
+                if (isOver(cRect, targetTiempo.getBoundingClientRect())) droppedOn = 'tiempo';
+
+                if (droppedOn) {
+                    if (droppedOn === card.dataset.type) {
+                        // Acierto: Ocultamos tarjeta y sumamos punto
+                        card.style.visibility = 'hidden';
+                        solvedCount++;
+                        scoreEl.textContent = solvedCount;
+                        const target = document.getElementById(`target-${droppedOn}`);
+                        target.classList.add('anim-success');
+                        setTimeout(() => target.classList.remove('anim-success'), 400);
+                        
+                        if (solvedCount === 10) {
+                            victoryScreen.style.display = 'grid';
+                        }
+                    } else {
+                        // Error: Vibración y vuelta al dock
+                        card.classList.add('shake');
+                        setTimeout(() => {
+                            card.classList.remove('shake');
+                            reset(card);
+                        }, 500);
+                    }
+                } else {
+                    // Si se suelta en tierra de nadie, vuelve a su sitio
+                    reset(card);
+                }
+                
+                // Limpiar resaltes de zonas
+                document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('active'));
+            };
+
+            function reset(el) {
+                el.style.position = 'relative';
+                el.style.left = '0';
+                el.style.top = '0';
+                el.style.zIndex = '50';
+            }
+
+            // Eventos Ratón
+            card.addEventListener('mousedown', onStart);
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onEnd);
+            
+            // Eventos Táctiles (Tablets / Pizarras Digitales)
+            card.addEventListener('touchstart', onStart);
+            document.addEventListener('touchmove', onMove);
+            document.addEventListener('touchend', onEnd);
+
+            dock.appendChild(card);
+        });
+
+        // Función para detectar si un rectángulo está sobre otro
+        function isOver(r1, r2) {
+            return !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom);
+        }
+    </script>
+</body>
+</html>
