@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Meteo-Iruña | Antiguas Carreras</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap');
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #0f172a; color: white;
+            font-family: 'Outfit', sans-serif; overflow: hidden; touch-action: none;
+        }
+
+        #game-container {
+            position: relative; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, #1e293b, #020617);
+            overflow: hidden; display: flex; flex-direction: column;
+        }
+
+        canvas { display: block; flex-grow: 1; }
+
+        .ui-header {
+            position: absolute; top: 10px; left: 10px; right: 10px;
+            display: flex; justify-content: space-between; pointer-events: none; z-index: 100;
+        }
+
+        #mission-card {
+            position: absolute; top: 75px; left: 50%; transform: translateX(-50%);
+            background: white; color: #0f172a; padding: 8px 20px;
+            border-radius: 30px; font-weight: 900; font-size: 0.9rem;
+            text-transform: uppercase; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            z-index: 100; text-align: center; border: 3px solid #e11d48;
+        }
+
+        .controls {
+            position: absolute; bottom: 30px; left: 0; right: 0;
+            display: flex; justify-content: space-around; padding: 0 20px; z-index: 200;
+        }
+
+        .control-btn {
+            width: 80px; height: 80px; background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px); border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 2.5rem; user-select: none; transition: all 0.1s;
+        }
+
+        .control-btn:active { transform: scale(0.85); background: #e11d48; }
+
+        .overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98);
+            z-index: 1000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 20px; text-align: center;
+            backdrop-filter: blur(15px); overflow-y: auto;
+        }
+
+        .history-list {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 15px;
+            width: 100%;
+            max-width: 300px;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #alert-box {
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            background: #e11d48; color: white; padding: 15px 30px; border-radius: 15px;
+            font-weight: 900; text-transform: uppercase; display: none; z-index: 400;
+            box-shadow: 0 0 40px rgba(225, 29, 72, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Panel de Puntuación -->
+        <div class="ui-header">
+            <div class="flex flex-col gap-1">
+                <div class="bg-slate-900/90 px-4 py-1 rounded-xl border border-white/10">
+                    <span class="text-[10px] block text-indigo-400 font-black uppercase tracking-tight">Puntos</span>
+                    <span id="score" class="text-xl font-black">0</span>
+                </div>
+            </div>
+            <div class="bg-slate-900/90 px-4 py-2 rounded-xl border border-white/10 text-right h-fit">
+                <span class="text-[10px] block text-rose-500 font-black uppercase tracking-tight">Vidas</span>
+                <span id="lives" class="text-xl">❤❤❤</span>
+            </div>
+        </div>
+
+        <div id="mission-card">
+            MISIÓN: <span id="current-goal" class="text-rose-600">Busca el FRÍO</span>
+        </div>
+
+        <div id="alert-box">¡DIFICULTAD AUMENTADA!</div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="controls">
+            <div id="btn-left" class="control-btn">◀</div>
+            <div id="btn-right" class="control-btn">▶</div>
+        </div>
+    </div>
+
+    <!-- Pantalla de Inicio -->
+    <div id="start-screen" class="overlay">
+        <div class="relative mb-4">
+            <div class="text-8xl">🛰️</div>
+            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-600 w-12 h-7 rounded-b-full border-2 border-white shadow-lg"></div>
+        </div>
+        <h1 class="text-4xl font-black mb-2 italic tracking-tighter">METEO-IRUÑA</h1>
+        <p class="text-slate-400 mb-6 max-w-xs text-sm">Misión de Ampliación: Intercepta los factores climáticos correctos.</p>
+        
+        <button id="start-btn" class="bg-red-600 hover:bg-red-500 text-white font-black py-4 px-12 rounded-3xl text-xl shadow-xl transition-all active:scale-95 mb-6">
+            ¡VIVA SAN FERMÍN!
+        </button>
+
+        <!-- Aquí el cambio: ANTIGUAS CARRERAS -->
+        <div id="history-container" class="history-list">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-white/10 pb-1">Antiguas Carreras</h3>
+            <div id="history-content" class="space-y-2 text-left">
+                <p class="text-xs text-slate-500 italic text-center">Sin registros previos.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla Game Over -->
+    <div id="game-over-screen" class="overlay" style="display: none;">
+        <div class="text-7xl mb-4">[Image of Toro]🐂</div>
+        <h2 class="text-4xl font-black text-white mb-1 tracking-tighter uppercase">¡TE HA PILLADO EL TORO!</h2>
+        <p class="text-slate-400 text-lg mb-6">Puntos conseguidos: <span id="final-score" class="text-red-500 font-black">0</span></p>
+        
+        <div id="history-container-end" class="history-list mb-8">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 border-b border-white/10 pb-1">Tus mejores marcas:</h3>
+            <div id="history-content-end" class="space-y-1 text-left"></div>
+        </div>
+
+        <button onclick="location.reload()" class="bg-white text-slate-950 font-black py-4 px-12 rounded-3xl text-xl shadow-2xl transition-all active:scale-95">
+            CORRER DE NUEVO
+        </button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const alertBox = document.getElementById('alert-box');
+        
+        function saveAttempt(newScore) {
+            let history = JSON.parse(localStorage.getItem('meteo_iruña_history') || '[]');
+            const now = new Date();
+            const dateStr = `${now.getDate()}/${now.getMonth()+1} ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            history.unshift({ score: newScore, date: dateStr });
+            history = history.slice(0, 5); 
+            localStorage.setItem('meteo_iruña_history', JSON.stringify(history));
+            updateHistoryUI();
+        }
+
+        function updateHistoryUI() {
+            const history = JSON.parse(localStorage.getItem('meteo_iruña_history') || '[]');
+            const contents = [document.getElementById('history-content'), document.getElementById('history-content-end')];
+            
+            contents.forEach(container => {
+                if (!container) return;
+                if (history.length === 0) return;
+                
+                container.innerHTML = history.map((item, index) => `
+                    <div class="flex justify-between items-center text-sm py-1 border-b border-white/5 last:border-0">
+                        <span class="text-slate-500 text-[10px] font-mono">${item.date}</span>
+                        <span class="font-black ${index === 0 ? 'text-red-500' : 'text-white'}">${item.score} pts</span>
+                    </div>
+                `).join('');
+            });
+        }
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            player.y = canvas.height - 180;
+        }
+
+        window.addEventListener('resize', resize);
+        updateHistoryUI();
+
+        let score = 0;
+        let lives = 3;
+        let gameActive = false;
+        let goalType = 'cold'; 
+        let emojiMode = true;
+        
+        const player = { x: 0, y: 0, width: 70, height: 50, speed: 10 };
+        const items = [];
+        const itemTypes = [
+            { text: "Altitud Alta", factor: "cold", icon: "🏔️" },
+            { text: "Latitud Alta", factor: "cold", icon: "❄️" },
+            { text: "Zonas Polares", factor: "cold", icon: "🧊" },
+            { text: "Costa o Playa", factor: "hot", icon: "🏖️" },
+            { text: "Ecuador Terrestre", factor: "hot", icon: "☀️" },
+            { text: "Latitud 0º", factor: "hot", icon: "🌴" },
+            { text: "Altitud 0m", factor: "hot", icon: "🏡" }
+        ];
+
+        let keys = {};
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        let moveLeft = false; let moveRight = false;
+        const bLeft = document.getElementById('btn-left');
+        const bRight = document.getElementById('btn-right');
+
+        const startLeft = (e) => { e.preventDefault(); moveLeft = true; };
+        const endLeft = (e) => { e.preventDefault(); moveLeft = false; };
+        const startRight = (e) => { e.preventDefault(); moveRight = true; };
+        const endRight = (e) => { e.preventDefault(); moveRight = false; };
+
+        bLeft.addEventListener('touchstart', startLeft); bLeft.addEventListener('touchend', endLeft);
+        bLeft.addEventListener('mousedown', startLeft); bLeft.addEventListener('mouseup', endLeft);
+        bRight.addEventListener('touchstart', startRight); bRight.addEventListener('touchend', endRight);
+        bRight.addEventListener('mousedown', startRight); bRight.addEventListener('mouseup', endRight);
+
+        function createItem() {
+            if (!gameActive) return;
+            const type = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+            let baseSpeed = 3 + (score / 12);
+            if (score >= 20) baseSpeed *= 1.4;
+
+            items.push({
+                x: 30 + Math.random() * (canvas.width - 160),
+                y: -100, width: 150, height: 50, speed: baseSpeed, ...type
+            });
+            setTimeout(createItem, Math.max(600, 2400 - score * 90));
+        }
+
+        function switchGoal() {
+            if (!gameActive) return;
+            goalType = goalType === 'cold' ? 'hot' : 'cold';
+            const goalEl = document.getElementById('current-goal');
+            goalEl.textContent = goalType === 'cold' ? "BUSCA EL FRÍO" : "BUSCA EL CALOR";
+            goalEl.style.color = goalType === 'cold' ? '#0ea5e9' : '#f59e0b';
+            setTimeout(switchGoal, 10000); 
+        }
+
+        function update() {
+            if (!gameActive) return;
+            if (score >= 10 && emojiMode) {
+                emojiMode = false;
+                showAlert("¡SÓLO TEXTO! Lee con atención");
+            }
+            if ((keys['ArrowLeft'] || moveLeft) && player.x > 10) player.x -= player.speed;
+            if ((keys['ArrowRight'] || moveRight) && player.x < canvas.width - player.width - 10) player.x += player.speed;
+
+            for (let i = items.length - 1; i >= 0; i--) {
+                items[i].y += items[i].speed;
+                if (player.x < items[i].x + items[i].width && player.x + player.width > items[i].x && player.y < items[i].y + items[i].height && player.y + player.height > items[i].y) {
+                    if (items[i].factor === goalType) {
+                        score++;
+                        document.getElementById('score').textContent = score;
+                    } else {
+                        lives--;
+                        document.getElementById('lives').textContent = "❤".repeat(Math.max(0, lives));
+                    }
+                    items.splice(i, 1);
+                    continue;
+                }
+                if (items[i].y > canvas.height) items.splice(i, 1);
+            }
+            if (lives <= 0) endGame();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            for(let i=0; i<30; i++) { ctx.beginPath(); ctx.arc((i*211)%canvas.width, (i*313)%canvas.height, 1, 0, Math.PI*2); ctx.fill(); }
+
+            const px = player.x, py = player.y, pw = player.width, ph = player.height;
+            ctx.fillStyle = '#475569';
+            ctx.beginPath(); ctx.roundRect(px, py, pw, ph, 12); ctx.fill();
+            ctx.fillStyle = '#e11d48';
+            ctx.beginPath(); ctx.moveTo(px+5, py+12); ctx.lineTo(px+pw-5, py+12); ctx.lineTo(px+pw/2, py+ph-5); ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.beginPath(); ctx.arc(px+pw/2, py+12, 4, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath(); ctx.arc(px+pw/2, py+8, 8, 0, Math.PI*2); ctx.fill();
+
+            items.forEach(item => {
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); ctx.roundRect(item.x, item.y, item.width, item.height, 15); ctx.fill();
+                ctx.fillStyle = '#0f172a'; ctx.font = '900 14px Outfit'; ctx.textAlign = 'center';
+                const content = emojiMode ? item.icon + " " + item.text : item.text;
+                ctx.fillText(content, item.x + item.width/2, item.y + 32);
+            });
+            if (gameActive) requestAnimationFrame(draw);
+        }
+
+        function showAlert(msg) {
+            alertBox.textContent = msg; alertBox.style.display = 'block';
+            setTimeout(() => alertBox.style.display = 'none', 3000);
+        }
+
+        function gameLoop() { update(); if (gameActive) setTimeout(gameLoop, 16); }
+
+        function endGame() {
+            gameActive = false;
+            document.getElementById('final-score').textContent = score;
+            saveAttempt(score);
+            document.getElementById('game-over-screen').style.display = 'flex';
+        }
+
+        document.getElementById('start-btn').onclick = () => {
+            document.getElementById('start-screen').style.display = 'none';
+            resize();
+            player.x = canvas.width / 2 - player.width / 2;
+            gameActive = true;
+            createItem(); switchGoal(); draw(); gameLoop();
+        };
+    </script>
+</body>
+</html>
